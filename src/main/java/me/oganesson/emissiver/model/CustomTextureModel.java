@@ -3,6 +3,7 @@ package me.oganesson.emissiver.model;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import me.oganesson.emissiver.asm.hooks.CTMHooks;
 import me.oganesson.emissiver.utils.LoggerUtil;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.BlockPart;
@@ -34,7 +35,7 @@ public class CustomTextureModel implements IModel {
     private Boolean uvLock;
 
     private final Collection<ResourceLocation> textureDependencies;
-    private final Map<String, Object> textures = new HashMap<>();
+    private final Map<String, CustomTexture> textures = new HashMap<>();
     private transient byte layers;
 
     public CustomTextureModel(ModelBlock modelInfo, IModel vanillaModel) {
@@ -51,8 +52,7 @@ public class CustomTextureModel implements IModel {
 
     public boolean canRenderInLayer(IBlockState state, BlockRenderLayer layer) {
         boolean flag = (layers < 0 && state.getBlock().getRenderLayer() == layer) || ((layers >> layer.ordinal()) & 1) == 1;
-        //return CTMHooks.checkLayerWithOptiFine(flag, layers, layer);
-        return false;
+        return CTMHooks.checkLayerWithOptiFine(flag, layers, layer);
     }
 
     @Override
@@ -67,10 +67,9 @@ public class CustomTextureModel implements IModel {
             } catch (IOException ignored) {}
             MetadataSectionCTM finalMeta = meta;
             textures.computeIfAbsent(sprite.getIconName(), s -> {
-                //CustomTexture tex = new CustomTexture(finalMeta);
-                //layers |= 1 << (tex.getLayer() == null ? 7 : tex.getLayer().ordinal());
-                //return tex;
-                return null;
+                CustomTexture tex = new CustomTexture(finalMeta);
+                layers |= 1 << (tex.getLayer() == null ? 7 : tex.getLayer().ordinal());
+                return tex;
             });
             return sprite;
         });
@@ -117,7 +116,7 @@ public class CustomTextureModel implements IModel {
         return this;
     }
 
-    public Object getTexture(String iconName) {
+    public CustomTexture getTexture(String iconName) {
         return textures.get(iconName);
     }
 
